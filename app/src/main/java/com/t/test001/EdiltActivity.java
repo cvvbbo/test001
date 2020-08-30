@@ -110,7 +110,7 @@ public class EdiltActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         super.onCreateOptionsMenu(menu);
         menu.add(0, Menu.FIRST, Menu.NONE, "保存");
-        menu.add(1, Menu.FIRST+1, Menu.NONE, "退出");
+        menu.add(1, Menu.FIRST + 1, Menu.NONE, "退出");
         return true;
     }
 
@@ -204,10 +204,15 @@ public class EdiltActivity extends AppCompatActivity {
                                 //if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                                 if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
                                     requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                            Manifest.permission.CAMERA}, 1000);
+                                            Manifest.permission.CAMERA, Manifest.permission.READ_PHONE_STATE}, 1000);
                                     return;
                                 }
                             }
+
+//                            initPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+//                                            Manifest.permission.CAMERA, Manifest.permission.READ_PHONE_STATE});
+
+
                             getPicFromCamera();
 
                         } else if (which == 1) {
@@ -228,12 +233,14 @@ public class EdiltActivity extends AppCompatActivity {
     }
 
 
+
     /**
      * 从相机获取图片
      */
     private void getPicFromCamera() {
         //用于保存调用相机拍照后所生成的文件
-        File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
+       // File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
+        File tempFile = new File(Environment.getExternalStorageDirectory().getPath(),  "test001.png");
         //跳转到调用系统相机
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         //判断版本
@@ -243,7 +250,11 @@ public class EdiltActivity extends AppCompatActivity {
             intent.putExtra(MediaStore.EXTRA_OUTPUT, contentUri);
             Log.e("getPicFromCamera", contentUri.toString());
         } else {    //否则使用Uri.fromFile(file)方法获取Uri
-            intent.putExtra(MediaStore.EXTRA_OUTPUT, Uri.fromFile(tempFile));
+
+           // Uri imageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "test001.jpg"));
+            Uri imageUri = Uri.fromFile(tempFile);
+            intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
+            //a.startActivityForResult(intent, 100);  //用户点击了从相机获取
         }
         startActivityForResult(intent, CAMERA_REQUEST_CODE);
     }
@@ -303,15 +314,18 @@ public class EdiltActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-        File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
+      //  File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
+        File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), "test001.png");
         switch (requestCode) {
             case CAMERA_REQUEST_CODE:   //调用相机后返回
                 if (resultCode == RESULT_OK) {
+                    // 7.0之前的别忘了适配
                     //用相机返回的照片去调用剪裁也需要对Uri进行处理
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         Uri contentUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", tempFile);
                         startPhotoZoom(contentUri);//开始对图片进行裁剪处理
                     } else {
+                       // startPhotoZoom(Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "test001.jpg")));//开始对图片进行裁剪处理
                         startPhotoZoom(Uri.fromFile(tempFile));//开始对图片进行裁剪处理
                     }
                 }
@@ -345,7 +359,12 @@ public class EdiltActivity extends AppCompatActivity {
                     int grantResult = grantResults[i];
                     switch (grantResult) {
                         case PackageManager.PERMISSION_GRANTED://同意授权0
-                            getPicFromCamera();
+                            CheckPermissionUtils.getPermissionResult(this, permissions, new CheckPermissionUtils.OnAgreePermission() {
+                                @Override
+                                public void AgreePermission() {
+                                    getPicFromCamera();
+                                }
+                            });
                             break;
                         case PackageManager.PERMISSION_DENIED://拒绝授权-1
                             Toast.makeText(EdiltActivity.this, "相关权限没授权", Toast.LENGTH_SHORT).show();
@@ -367,4 +386,5 @@ public class EdiltActivity extends AppCompatActivity {
             }
         }
     }
+
 }
