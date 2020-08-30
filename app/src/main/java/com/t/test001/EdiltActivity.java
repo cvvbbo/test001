@@ -39,7 +39,7 @@ import androidx.core.content.FileProvider;
  * Author: xiong
  * Time: 2020/8/20 20:29
  */
-public class EdiltActivity extends AppCompatActivity {
+public class EdiltActivity extends BasePermissionsActivity {
 
 
     private static final int CAMERA_REQUEST_CODE = 1;
@@ -200,20 +200,18 @@ public class EdiltActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         if (which == 0) {
-                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                                //if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-                                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-                                            Manifest.permission.CAMERA, Manifest.permission.READ_PHONE_STATE}, 1000);
-                                    return;
-                                }
-                            }
+//                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                                //if ((checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) && checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+//                                if (checkSelfPermission(Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+//                                    requestPermissions(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+//                                            Manifest.permission.CAMERA, Manifest.permission.READ_PHONE_STATE}, 1000);
+//                                    return;
+//                                }
+//                            }
+//                            getPicFromCamera();
 
-//                            initPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
-//                                            Manifest.permission.CAMERA, Manifest.permission.READ_PHONE_STATE});
-
-
-                            getPicFromCamera();
+                            initPermission(new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                    Manifest.permission.CAMERA, Manifest.permission.READ_PHONE_STATE});
 
                         } else if (which == 1) {
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
@@ -224,7 +222,6 @@ public class EdiltActivity extends AppCompatActivity {
                                 }
                             }
                             getPicFromAlbm();
-
                         }
                     }
                 }
@@ -232,15 +229,19 @@ public class EdiltActivity extends AppCompatActivity {
         alertDialog.show();
     }
 
-
+    @Override
+    public void doAfterPermission() {
+        getPicFromCamera();
+        super.doAfterPermission();
+    }
 
     /**
      * 从相机获取图片
      */
     private void getPicFromCamera() {
         //用于保存调用相机拍照后所生成的文件
-       // File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
-        File tempFile = new File(Environment.getExternalStorageDirectory().getPath(),  "test001.png");
+        // File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
+        File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), "test001.png");
         //跳转到调用系统相机
         Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         //判断版本
@@ -251,7 +252,7 @@ public class EdiltActivity extends AppCompatActivity {
             Log.e("getPicFromCamera", contentUri.toString());
         } else {    //否则使用Uri.fromFile(file)方法获取Uri
 
-           // Uri imageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "test001.jpg"));
+            // Uri imageUri = Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "test001.jpg"));
             Uri imageUri = Uri.fromFile(tempFile);
             intent.putExtra(MediaStore.EXTRA_OUTPUT, imageUri);
             //a.startActivityForResult(intent, 100);  //用户点击了从相机获取
@@ -278,7 +279,6 @@ public class EdiltActivity extends AppCompatActivity {
         if (uri == null) {
             Log.i("tag", "The uri is not exist.");
         }
-//        tempUri = uri;
         Intent intent = new Intent("com.android.camera.action.CROP");
         intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
         intent.addFlags(Intent.FLAG_GRANT_WRITE_URI_PERMISSION);
@@ -314,7 +314,7 @@ public class EdiltActivity extends AppCompatActivity {
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
         super.onActivityResult(requestCode, resultCode, intent);
-      //  File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
+        //  File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), File.separator + "test" + File.separator + "test001.png");
         File tempFile = new File(Environment.getExternalStorageDirectory().getPath(), "test001.png");
         switch (requestCode) {
             case CAMERA_REQUEST_CODE:   //调用相机后返回
@@ -325,7 +325,7 @@ public class EdiltActivity extends AppCompatActivity {
                         Uri contentUri = FileProvider.getUriForFile(this, getPackageName() + ".fileprovider", tempFile);
                         startPhotoZoom(contentUri);//开始对图片进行裁剪处理
                     } else {
-                       // startPhotoZoom(Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "test001.jpg")));//开始对图片进行裁剪处理
+                        // startPhotoZoom(Uri.fromFile(new File(Environment.getExternalStorageDirectory(), "test001.jpg")));//开始对图片进行裁剪处理
                         startPhotoZoom(Uri.fromFile(tempFile));//开始对图片进行裁剪处理
                     }
                 }
@@ -350,41 +350,38 @@ public class EdiltActivity extends AppCompatActivity {
 
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        if (requestCode == 1000) {
-            if (grantResults.length > 0) {
-                for (int i = 0; i < grantResults.length; i++) {
-                    int grantResult = grantResults[i];
-                    switch (grantResult) {
-                        case PackageManager.PERMISSION_GRANTED://同意授权0
-                            CheckPermissionUtils.getPermissionResult(this, permissions, new CheckPermissionUtils.OnAgreePermission() {
-                                @Override
-                                public void AgreePermission() {
-                                    getPicFromCamera();
-                                }
-                            });
-                            break;
-                        case PackageManager.PERMISSION_DENIED://拒绝授权-1
-                            Toast.makeText(EdiltActivity.this, "相关权限没授权", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        } else if (requestCode == 1001) {
-            if (grantResults.length > 0) {
-                for (int i = 0; i < grantResults.length; i++) {
-                    int grantResult = grantResults[i];
-                    switch (grantResult) {
-                        case PackageManager.PERMISSION_GRANTED://同意授权0
-                            getPicFromAlbm();
-                            break;
-                        case PackageManager.PERMISSION_DENIED://拒绝授权-1
-                            Toast.makeText(EdiltActivity.this, "相关权限没授权", Toast.LENGTH_SHORT).show();
-                    }
-                }
-            }
-        }
-    }
+//    @Override
+//    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+//        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
+//        if (requestCode == 1000) {
+//            if (grantResults.length > 0) {
+//                for (int i = 0; i < grantResults.length; i++) {
+//                    int grantResult = grantResults[i];
+//                    switch (grantResult) {
+//                        case PackageManager.PERMISSION_GRANTED://同意授权0
+//                            CheckPermissionUtils.getPermissionResult(this, permissions, () -> {
+//                                getPicFromCamera();
+//                            });
+//                            break;
+//                        case PackageManager.PERMISSION_DENIED://拒绝授权-1
+//                            Toast.makeText(EdiltActivity.this, "相关权限没授权", Toast.LENGTH_SHORT).show();
+//                    }
+//                }
+//            }
+//        } else if (requestCode == 1001) {
+//            if (grantResults.length > 0) {
+//                for (int i = 0; i < grantResults.length; i++) {
+//                    int grantResult = grantResults[i];
+//                    switch (grantResult) {
+//                        case PackageManager.PERMISSION_GRANTED://同意授权0
+//                            getPicFromAlbm();
+//                            break;
+//                        case PackageManager.PERMISSION_DENIED://拒绝授权-1
+//                            Toast.makeText(EdiltActivity.this, "相关权限没授权", Toast.LENGTH_SHORT).show();
+//                    }
+//                }
+//            }
+//        }
+//    }
 
 }

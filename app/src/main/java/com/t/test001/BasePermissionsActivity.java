@@ -18,11 +18,10 @@ import androidx.core.content.ContextCompat;
 public class BasePermissionsActivity extends AppCompatActivity {
 
 
-
     private static final int permissionsRequestCode = 2;
 
-    String dialogtitle = permissiontitle()+"权限权限不可用";
-    String contenttitle = "为了APP的正常使用,需要开启"+permissiontitle()+"权限\n否则，部分功能将无法正常使用";
+    String dialogtitle = setPermissionTitle() + "权限权限不可用";
+    String contenttitle = "为了APP的正常使用,需要开启" + setPermissionTitle() + "权限\n否则，部分功能将无法正常使用";
 
 
     public void initPermission(String[] permissions) {
@@ -37,12 +36,14 @@ public class BasePermissionsActivity extends AppCompatActivity {
             //如果permissionList是空的，说明没有权限需要授权,什么都不做，该干嘛干嘛，否则就发起授权请求
             if (!permissionList.isEmpty()) {
                 showDialogTipUserRequestPermission(permissionList, dialogtitle, contenttitle);
-            }else {
+                // 新申请的权限重置。
+                CheckPermissionUtils.open_one = true;
+            } else {
                 // todo 如果权限都有了，则执行有权限的方法
-                AfterPermission();
+                doAfterPermission();
             }
-        }else {
-            AfterPermission();
+        } else {
+            doAfterPermission();
         }
     }
 
@@ -83,14 +84,17 @@ public class BasePermissionsActivity extends AppCompatActivity {
                         int grantResult = grantResults[i];
                         switch (grantResult) {
                             case PackageManager.PERMISSION_GRANTED://同意授权0
-                                AfterPermission();
+                                // doAfterPermission();
+                                CheckPermissionUtils.getPermissionResult(this, permissions, () -> {
+                                    doAfterPermission();
+                                });
                                 break;
                             case PackageManager.PERMISSION_DENIED://拒绝授权-1
 //                                Utils.ShowToast(context,permissions[i]+"权限获取失败");
-                                AfterPermission();
-                                Toast.makeText( this,"权限获取失败\"请去\"设置\"中开启本应用的相机和图片媒体访问权限",Toast.LENGTH_SHORT).show();
+                                doAfterPermission();
+                                Toast.makeText(this, "权限获取失败\"请去\"设置\"中开启本应用的相机和图片媒体访问权限", Toast.LENGTH_SHORT).show();
                                 //getActivity().finish();
-                                Log.e("BasePermissionsActivity",permissions[i]);
+                                Log.e("BasePermissionsActivity", permissions[i]);
                                 break;
                         }
                     }
@@ -101,27 +105,23 @@ public class BasePermissionsActivity extends AppCompatActivity {
 
 
     /**
-     *
-     *  得到权限的中文名字
-     *
-     *
-     *  todo
-     *  提示用户哪些权限不能够使用
-     *  当大于一一个权限的时候，则提示   相关权限不可用
-     *  只有当只有一个权限的时候，则提示 具体的权限名字
-     *
-     * */
-    public String permissiontitle(){
+     * 得到权限的中文名字
+     * <p>
+     * <p>
+     * todo
+     * 提示用户哪些权限不能够使用
+     * 当大于一一个权限的时候，则提示   相关权限不可用
+     * 只有当只有一个权限的时候，则提示 具体的权限名字
+     */
+    public String setPermissionTitle() {
         return null;
     }
 
 
     /**
-     *
      * 授权之后的行为
-     *
-     * */
-    public void AfterPermission(){
+     */
+    public void doAfterPermission() {
 
     }
 
